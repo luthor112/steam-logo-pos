@@ -3,7 +3,7 @@ import { callable, findModule, Millennium } from "@steambrew/client";
 // Backend functions
 const get_app_x = callable<[{ app_id: number }], number>('Backend.get_app_x');
 const get_app_y = callable<[{ app_id: number }], number>('Backend.get_app_y');
-const set_app_xy = callable<[{ app_id: number, pos_x: number, pos_y: number }], boolean>('Backend.purge_cache');
+const set_app_xy = callable<[{ app_id: number, pos_x: number, pos_y: number }], boolean>('Backend.set_app_xy');
 
 const WaitForElement = async (sel: string, parent = document) =>
 	[...(await Millennium.findElement(parent, sel))][0];
@@ -32,10 +32,60 @@ async function OnPopupCreation(popup: any) {
 
         MainWindowBrowserManager.m_browser.on("finished-request", async (currentURL, previousURL) => {
             if (MainWindowBrowserManager.m_lastLocation.pathname.startsWith("/library/app/")) {
-                const topCapsuleDiv = await WaitForElement(`div.${findModule(e => e.BoxSizer).BoxSizer}`, popup.m_popup.document);
-                if (!topCapsuleDiv.classList.contains("logopos-header")) {
-                    // TODO
-                    topCapsuleDiv.classList.add("logopos-header");
+                const sizerDiv = await WaitForElement(`div.${findModule(e => e.BoxSizer).BoxSizer}`, popup.m_popup.document);
+
+                const savedX = await get_app_x({ app_id: uiStore.currentGameListSelection.nAppId });
+                const savedY = await get_app_y({ app_id: uiStore.currentGameListSelection.nAppId });
+                if (savedX !== -1 && savedY !== -1) {
+                    sizerDiv.style.left = savedX + "px";
+                    sizerDiv.style.top = savedY + "px";
+                }
+
+                if (!sizerDiv.classList.contains("logopos-header")) {
+                    async function makeDraggableElement(elmnt) {
+                        var diffX = 0, diffY = 0, lastX = 0, lastY = 0, elmntX = 0, elmntY = 0;
+                        elmnt.onmousedown = dragMouseDown;
+
+                        async function dragMouseDown(e) {
+                            elmnt.style.cursor = "move";
+
+                            e = e || window.event;
+                            e.preventDefault();
+
+                            lastX = e.clientX;
+                            lastY = e.clientY;
+
+                            popup.m_popup.document.onmouseup = elementRelease;
+                            popup.m_popup.document.onmousemove = elementDrag;
+                        }
+
+                        async function elementDrag(e) {
+                            e = e || window.event;
+                            e.preventDefault();
+
+                            diffX = lastX - e.clientX;
+                            diffY = lastY - e.clientY;
+                            lastX = e.clientX;
+                            lastY = e.clientY;
+
+                            elmntY = (elmnt.offsetTop - diffY);
+                            elmntX = (elmnt.offsetLeft - diffX);
+                            elmnt.style.top = elmntY + "px";
+                            elmnt.style.left = elmntX + "px";
+                        }
+
+                        async function elementRelease() {
+                            elmnt.style.cursor = "";
+
+                            popup.m_popup.document.onmouseup = null;
+                            popup.m_popup.document.onmousemove = null;
+
+                            await set_app_xy({ app_id: uiStore.currentGameListSelection.nAppId, pos_x: elmntX, pos_y: elmntY });
+                        }
+                    }
+
+                    makeDraggableElement(sizerDiv);
+                    sizerDiv.classList.add("logopos-header");
                 }
             }
         });

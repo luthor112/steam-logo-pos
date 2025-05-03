@@ -1,0 +1,8 @@
+{
+    "$schema": "https://raw.githubusercontent.com/SteamClientHomebrew/Millennium/main/src/sys/plugin-schema.json",
+
+    "name": "steam-logo-pos",
+    "common_name": "Custom Logo Position",
+    "description": "Arbitrary repositioning of application logos",
+    "version": "1.0.0"
+}

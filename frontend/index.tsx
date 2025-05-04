@@ -36,56 +36,70 @@ async function OnPopupCreation(popup: any) {
 
                 const savedX = await get_app_x({ app_id: uiStore.currentGameListSelection.nAppId });
                 const savedY = await get_app_y({ app_id: uiStore.currentGameListSelection.nAppId });
-                if (savedX !== -1 && savedY !== -1) {
+                if (savedX !== -1 || savedY !== -1) {
                     sizerDiv.style.left = savedX + "px";
                     sizerDiv.style.top = savedY + "px";
                 }
 
-                if (!sizerDiv.classList.contains("logopos-header")) {
-                    async function makeDraggableElement(elmnt) {
-                        var diffX = 0, diffY = 0, lastX = 0, lastY = 0, elmntX = 0, elmntY = 0;
-                        elmnt.onmousedown = dragMouseDown;
+                const gameSettingsButton = await WaitForElement(`div.${findModule(e => e.InPage).InPage} div.${findModule(e => e.AppButtonsContainer).AppButtonsContainer} > div.${findModule(e => e.MenuButtonContainer).MenuButtonContainer}:not([role="button"])`, popup.m_popup.document);
+                const oldMoveButton = gameSettingsButton.parentNode.querySelector('div.logo-move-button');
+                if (!oldMoveButton) {
+                    const moveButton = gameSettingsButton.cloneNode(true);
+                    moveButton.classList.add("logo-move-button");
+                    moveButton.firstChild.innerHTML = "ML";
+                    gameSettingsButton.parentNode.insertBefore(moveButton, gameSettingsButton.nextSibling);
 
-                        async function dragMouseDown(e) {
-                            elmnt.style.cursor = "move";
+                    moveButton.addEventListener("click", async () => {
+                        if (!sizerDiv.classList.contains("logopos-header")) {
+                            async function makeDraggableElement(elmnt) {
+                                var diffX = 0, diffY = 0, lastX = 0, lastY = 0, elmntX = 0, elmntY = 0;
+                                elmnt.onmousedown = dragMouseDown;
 
-                            e = e || window.event;
-                            e.preventDefault();
+                                async function dragMouseDown(e) {
+                                    elmnt.style.cursor = "move";
 
-                            lastX = e.clientX;
-                            lastY = e.clientY;
+                                    e = e || window.event;
+                                    e.preventDefault();
 
-                            popup.m_popup.document.onmouseup = elementRelease;
-                            popup.m_popup.document.onmousemove = elementDrag;
+                                    lastX = e.clientX;
+                                    lastY = e.clientY;
+
+                                    popup.m_popup.document.onmouseup = elementRelease;
+                                    popup.m_popup.document.onmousemove = elementDrag;
+                                }
+
+                                async function elementDrag(e) {
+                                    e = e || window.event;
+                                    e.preventDefault();
+
+                                    diffX = lastX - e.clientX;
+                                    diffY = lastY - e.clientY;
+                                    lastX = e.clientX;
+                                    lastY = e.clientY;
+
+                                    elmntY = (elmnt.offsetTop - diffY);
+                                    elmntX = (elmnt.offsetLeft - diffX);
+                                    elmnt.style.top = elmntY + "px";
+                                    elmnt.style.left = elmntX + "px";
+                                }
+
+                                async function elementRelease() {
+                                    elmnt.style.cursor = "";
+
+                                    popup.m_popup.document.onmouseup = null;
+                                    popup.m_popup.document.onmousemove = null;
+
+                                    await set_app_xy({ app_id: uiStore.currentGameListSelection.nAppId, pos_x: elmntX, pos_y: elmntY });
+                                }
+                            }
+
+                            makeDraggableElement(sizerDiv);
+                            sizerDiv.classList.add("logopos-header");
+                        } else {
+                            sizerDiv.onmousedown = null;
+                            sizerDiv.classList.remove("logopos-header");
                         }
-
-                        async function elementDrag(e) {
-                            e = e || window.event;
-                            e.preventDefault();
-
-                            diffX = lastX - e.clientX;
-                            diffY = lastY - e.clientY;
-                            lastX = e.clientX;
-                            lastY = e.clientY;
-
-                            elmntY = (elmnt.offsetTop - diffY);
-                            elmntX = (elmnt.offsetLeft - diffX);
-                            elmnt.style.top = elmntY + "px";
-                            elmnt.style.left = elmntX + "px";
-                        }
-
-                        async function elementRelease() {
-                            elmnt.style.cursor = "";
-
-                            popup.m_popup.document.onmouseup = null;
-                            popup.m_popup.document.onmousemove = null;
-
-                            await set_app_xy({ app_id: uiStore.currentGameListSelection.nAppId, pos_x: elmntX, pos_y: elmntY });
-                        }
-                    }
-
-                    makeDraggableElement(sizerDiv);
-                    sizerDiv.classList.add("logopos-header");
+                    });
                 }
             }
         });

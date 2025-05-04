@@ -54,10 +54,9 @@ async function OnPopupCreation(popup: any) {
                             async function makeDraggableElement(elmnt) {
                                 var diffX = 0, diffY = 0, lastX = 0, lastY = 0, elmntX = 0, elmntY = 0;
                                 elmnt.onmousedown = dragMouseDown;
+                                elmnt.style.cursor = "move";
 
                                 async function dragMouseDown(e) {
-                                    elmnt.style.cursor = "move";
-
                                     e = e || window.event;
                                     e.preventDefault();
 
@@ -84,8 +83,6 @@ async function OnPopupCreation(popup: any) {
                                 }
 
                                 async function elementRelease() {
-                                    elmnt.style.cursor = "";
-
                                     popup.m_popup.document.onmouseup = null;
                                     popup.m_popup.document.onmousemove = null;
 
@@ -97,6 +94,7 @@ async function OnPopupCreation(popup: any) {
                             sizerDiv.classList.add("logopos-header");
                         } else {
                             sizerDiv.onmousedown = null;
+                            sizerDiv.style.cursor = "";
                             sizerDiv.classList.remove("logopos-header");
                         }
                     });

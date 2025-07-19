@@ -1,4 +1,4 @@
-import { callable, findModule, Millennium } from "@steambrew/client";
+import { callable, findModule, Millennium, sleep } from "@steambrew/client";
 
 // Backend functions
 const get_app_x = callable<[{ app_id: number }], number>('Backend.get_app_x');
@@ -13,10 +13,6 @@ const WaitForElementTimeout = async (sel: string, parent = document, timeOut = 1
 
 const WaitForElementList = async (sel: string, parent = document) =>
 	[...(await Millennium.findElement(parent, sel))];
-
-async function sleep(msec) {
-    return new Promise(resolve => setTimeout(resolve, msec));
-}
 
 async function OnPopupCreation(popup: any) {
     if (popup.m_strName === "SP Desktop_uid0") {
@@ -106,6 +102,7 @@ async function OnPopupCreation(popup: any) {
 
 export default async function PluginMain() {
     console.log("[steam-logo-pos] Frontend startup");
+    await sleep(1000);  // Hopefully temporary workaround
 
     const doc = g_PopupManager.GetExistingPopup("SP Desktop_uid0");
 	if (doc) {

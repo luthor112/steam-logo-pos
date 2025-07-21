@@ -10,6 +10,13 @@ pos_db = {}
 # UTIL #
 ########
 
+def get_config_fname():
+    return os.path.join(PLUGIN_BASE_DIR, "config.json")
+
+def get_config():
+    with open(get_config_fname(), "rt") as fp:
+        return json.load(fp)
+
 def get_db_fname():
     return os.path.join(PLUGIN_BASE_DIR, "pos-db.json")
 
@@ -70,6 +77,18 @@ class Backend:
         logger.log(f"set_app_xy({app_id}, {pos_x}, {pos_y})")
         set_xy_pos(app_id, pos_x, pos_y)
         return True
+
+    @staticmethod
+    def get_context_menu_enabled():
+        context_menu_enabled = get_config()["context_menu"]
+        logger.log(f"get_context_menu_enabled() -> {context_menu_enabled}")
+        return context_menu_enabled
+
+    @staticmethod
+    def get_app_button_enabled():
+        app_button_enabled = get_config()["show_button"]
+        logger.log(f"get_app_button_enabled() -> {app_button_enabled}")
+        return app_button_enabled
 
 class Plugin:
     def _front_end_loaded(self):

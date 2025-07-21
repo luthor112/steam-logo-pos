@@ -4,6 +4,8 @@ import { callable, findModule, Millennium, sleep } from "@steambrew/client";
 const get_app_x = callable<[{ app_id: number }], number>('Backend.get_app_x');
 const get_app_y = callable<[{ app_id: number }], number>('Backend.get_app_y');
 const set_app_xy = callable<[{ app_id: number, pos_x: number, pos_y: number }], boolean>('Backend.set_app_xy');
+const get_context_menu_enabled = callable<[{}], boolean>('Backend.get_context_menu_enabled');
+const get_app_button_enabled = callable<[{}], boolean>('Backend.get_app_button_enabled');
 
 const WaitForElement = async (sel: string, parent = document) =>
 	[...(await Millennium.findElement(parent, sel))][0];
@@ -37,64 +39,163 @@ async function OnPopupCreation(popup: any) {
                     sizerDiv.style.top = savedY + "px";
                 }
 
-                const gameSettingsButton = await WaitForElement(`div.${findModule(e => e.InPage).InPage} div.${findModule(e => e.AppButtonsContainer).AppButtonsContainer} > div.${findModule(e => e.MenuButtonContainer).MenuButtonContainer}:not([role="button"])`, popup.m_popup.document);
-                const oldMoveButton = gameSettingsButton.parentNode.querySelector('div.logo-move-button');
-                if (!oldMoveButton) {
-                    const moveButton = gameSettingsButton.cloneNode(true);
-                    moveButton.classList.add("logo-move-button");
-                    moveButton.firstChild.innerHTML = "ML";
-                    gameSettingsButton.parentNode.insertBefore(moveButton, gameSettingsButton.nextSibling);
+                const movementHandler = async () => {
+                    if (!sizerDiv.classList.contains("logopos-header")) {
+                        async function makeDraggableElement(elmnt) {
+                            var diffX = 0, diffY = 0, lastX = 0, lastY = 0, elmntX = 0, elmntY = 0;
+                            elmnt.onmousedown = dragMouseDown;
+                            elmnt.style.cursor = "move";
 
-                    moveButton.addEventListener("click", async () => {
-                        if (!sizerDiv.classList.contains("logopos-header")) {
-                            async function makeDraggableElement(elmnt) {
-                                var diffX = 0, diffY = 0, lastX = 0, lastY = 0, elmntX = 0, elmntY = 0;
-                                elmnt.onmousedown = dragMouseDown;
-                                elmnt.style.cursor = "move";
+                            async function dragMouseDown(e) {
+                                e = e || window.event;
+                                e.preventDefault();
 
-                                async function dragMouseDown(e) {
-                                    e = e || window.event;
-                                    e.preventDefault();
+                                lastX = e.clientX;
+                                lastY = e.clientY;
 
-                                    lastX = e.clientX;
-                                    lastY = e.clientY;
-
-                                    popup.m_popup.document.onmouseup = elementRelease;
-                                    popup.m_popup.document.onmousemove = elementDrag;
-                                }
-
-                                async function elementDrag(e) {
-                                    e = e || window.event;
-                                    e.preventDefault();
-
-                                    diffX = lastX - e.clientX;
-                                    diffY = lastY - e.clientY;
-                                    lastX = e.clientX;
-                                    lastY = e.clientY;
-
-                                    elmntY = (elmnt.offsetTop - diffY);
-                                    elmntX = (elmnt.offsetLeft - diffX);
-                                    elmnt.style.top = elmntY + "px";
-                                    elmnt.style.left = elmntX + "px";
-                                }
-
-                                async function elementRelease() {
-                                    popup.m_popup.document.onmouseup = null;
-                                    popup.m_popup.document.onmousemove = null;
-
-                                    await set_app_xy({ app_id: uiStore.currentGameListSelection.nAppId, pos_x: elmntX, pos_y: elmntY });
-                                }
+                                popup.m_popup.document.onmouseup = elementRelease;
+                                popup.m_popup.document.onmousemove = elementDrag;
                             }
 
-                            makeDraggableElement(sizerDiv);
-                            sizerDiv.classList.add("logopos-header");
-                        } else {
-                            sizerDiv.onmousedown = null;
-                            sizerDiv.style.cursor = "";
-                            sizerDiv.classList.remove("logopos-header");
+                            async function elementDrag(e) {
+                                e = e || window.event;
+                                e.preventDefault();
+
+                                diffX = lastX - e.clientX;
+                                diffY = lastY - e.clientY;
+                                lastX = e.clientX;
+                                lastY = e.clientY;
+
+                                elmntY = (elmnt.offsetTop - diffY);
+                                elmntX = (elmnt.offsetLeft - diffX);
+                                elmnt.style.top = elmntY + "px";
+                                elmnt.style.left = elmntX + "px";
+                            }
+
+                            async function elementRelease() {
+                                popup.m_popup.document.onmouseup = null;
+                                popup.m_popup.document.onmousemove = null;
+
+                                await set_app_xy({ app_id: uiStore.currentGameListSelection.nAppId, pos_x: elmntX, pos_y: elmntY });
+                            }
                         }
-                    });
+
+                        makeDraggableElement(sizerDiv);
+                        sizerDiv.classList.add("logopos-header");
+                    } else {
+                        sizerDiv.onmousedown = null;
+                        sizerDiv.style.cursor = "";
+                        sizerDiv.classList.remove("logopos-header");
+                    }
+                };
+
+                const appButtonEnabled = await get_app_button_enabled({});
+                if (appButtonEnabled) {
+                    const gameSettingsButton = await WaitForElement(`div.${findModule(e => e.InPage).InPage} div.${findModule(e => e.AppButtonsContainer).AppButtonsContainer} > div.${findModule(e => e.MenuButtonContainer).MenuButtonContainer}:not([role="button"])`, popup.m_popup.document);
+                    const oldMoveButton = gameSettingsButton.parentNode.querySelector('div.logo-move-button');
+                    if (!oldMoveButton) {
+                        const moveButton = gameSettingsButton.cloneNode(true);
+                        moveButton.classList.add("logo-move-button");
+                        moveButton.firstChild.innerHTML = "ML";
+                        gameSettingsButton.parentNode.insertBefore(moveButton, gameSettingsButton.nextSibling);
+
+                        moveButton.addEventListener("click", movementHandler);
+                    }
                 }
+
+                const contextMenuEnabled = await get_context_menu_enabled({});
+                if (contextMenuEnabled) {
+                    const hasSpecificMenuItems = (container) => {
+                        const itemsText = Array.from(container.querySelectorAll('div.menuItem.contextMenuItem'))
+                            .map(el => el.textContent.trim());
+
+                        const requiredItems = [
+                            'Adjust Logo Position'
+                        ];
+
+                        return requiredItems.every(item => itemsText.includes(item));
+                    };
+
+                    const addMoveLogoButton = (container) => {
+                        if (!hasSpecificMenuItems(container)) return;
+                        if (container.querySelector('.contextMenuItem.moveLogoAdded')) return;
+
+                        const newItem = document.createElement('div');
+                        newItem.setAttribute('role', 'menuitem');
+                        newItem.className = 'menuItem contextMenuItem moveLogoAdded';
+                        newItem.textContent = 'Move Logo';
+
+                        newItem.addEventListener('click', movementHandler);
+
+                        container.appendChild(newItem);
+                        console.log('[steam-logo-pos] "Move Logo" item successfully added');
+                    };
+
+                    const observer = new MutationObserver(mutations => {
+                        mutations.forEach(mutation => {
+                            mutation.addedNodes.forEach(node => {
+                                if (node.nodeType === 1) { // Element node
+                                    const container = node.querySelector('div.contextMenuContainer') || 
+                                                      (node.classList && node.classList.contains('contextMenuContainer') ? node : null);
+                                    if (container) {
+                                        addMoveLogoButton(container);
+                                    }
+                                }
+                            });
+                        });
+                    });
+
+                    observer.observe(document.body, { childList: true, subtree: true });
+
+                    // Initial fallback in case menu is already present
+                    //waitForElement('div.contextMenuContainer').then(addMoveLogoButton).catch(console.error);
+                }
+
+                //const contextMenuEnabled = await get_context_menu_enabled({});
+                /*const contextMenuEnabled = false;
+                if (contextMenuEnabled) {
+                    const topCapsuleDiv = await WaitForElement(`div.${findModule(e => e.TopCapsule).TopCapsule}`, popup.m_popup.document);
+                    if (!topCapsuleDiv.classList.contains("easygrid-rightclick")) {
+                        //topCapsuleDiv.addEventListener("contextmenu", async (e) => {
+                            console.log("[steam-logo-pos] Right click detected!");
+                            const menuItemAdder = (menuElement) => {
+                                const moveMenu = popup.m_popup.document.createElement("div");
+                                moveMenu.role = "option";
+                                moveMenu.className = `${findModule(e => e.contextMenuItem).contextMenuItem} contextMenuItem`;
+                                moveMenu.innerHTML = "Move Logo Freely";
+                                // TODO: Add handler here
+                                menuElement.appendChild(moveMenu);
+                            };
+                            
+                            const observer = new MutationObserver((mutations) => {
+                                const contextManuClassName = findModule(e => e.contextMenuContents).contextMenuContents;
+                                for (const mutation of mutations) {
+                                    for (const node of Array.from(mutation.addedNodes)) {
+                                        if (node.nodeType !== Node.ELEMENT_NODE)
+                                            continue;
+
+                                        const element = node as Element;
+                                        if (element.classList.contains(contextManuClassName)) {
+                                            observer.disconnect();
+                                            menuItemAdder(element);
+                                        }
+
+                                        const match = element.querySelector(`.${contextManuClassName}`);
+                                        if (match) {
+                                            observer.disconnect();
+                                            menuItemAdder(element);
+                                        }
+                                    }
+                                }
+                            });
+                            observer.observe(popup.m_popup.document.body, {
+                                childList: true,
+                                subtree: true
+                            });
+                        //});
+                        topCapsuleDiv.classList.add("easygrid-rightclick");
+                    }
+                }*/
             }
         });
     }

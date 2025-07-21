@@ -106,7 +106,7 @@ async function OnPopupCreation(popup: any) {
                 const contextMenuEnabled = await get_context_menu_enabled({});
                 if (contextMenuEnabled) {
                     const hasSpecificMenuItems = (container) => {
-                        const itemsText = Array.from(container.querySelectorAll('div.menuItem.contextMenuItem'))
+                        const itemsText = Array.from(container.querySelectorAll('div._1n7Wloe5jZ6fSuvV18NNWI.contextMenuItem'))
                             .map(el => el.textContent.trim());
 
                         const requiredItems = [
@@ -121,11 +121,19 @@ async function OnPopupCreation(popup: any) {
                         if (container.querySelector('.contextMenuItem.moveLogoAdded')) return;
 
                         const newItem = document.createElement('div');
-                        newItem.setAttribute('role', 'menuitem');
-                        newItem.className = 'menuItem contextMenuItem moveLogoAdded';
+                        newItem.setAttribute('role', '_1n7Wloe5jZ6fSuvV18NNWI');
+                        newItem.className = '_1n7Wloe5jZ6fSuvV18NNWI contextMenuItem moveLogoAdded';
                         newItem.textContent = 'Move Logo';
 
-                        newItem.addEventListener('click', movementHandler);
+                        newItem.addEventListener('click', async () => {
+                            movementHandler();
+
+                            const parentDiv = container.parentElement;
+                            if (parentDiv) 
+                                parentDiv.style.display = 'none';
+                            else
+                                container.style.display = 'none';
+                        });
 
                         container.appendChild(newItem);
                         console.log('[steam-logo-pos] "Move Logo" item successfully added');
@@ -135,8 +143,8 @@ async function OnPopupCreation(popup: any) {
                         mutations.forEach(mutation => {
                             mutation.addedNodes.forEach(node => {
                                 if (node.nodeType === 1) { // Element node
-                                    const container = node.querySelector('div.contextMenuContainer') || 
-                                                      (node.classList && node.classList.contains('contextMenuContainer') ? node : null);
+                                    const container = node.querySelector('div._2EstNjFIIZm_WUSKm5Wt7n') || 
+                                                      (node.classList && node.classList.contains('_2EstNjFIIZm_WUSKm5Wt7n') ? node : null);
                                     if (container) {
                                         addMoveLogoButton(container);
                                     }
@@ -145,7 +153,8 @@ async function OnPopupCreation(popup: any) {
                         });
                     });
 
-                    observer.observe(document.body, { childList: true, subtree: true });
+                    observer.observe(popup.m_popup.document.body, { childList: true, subtree: true });
+                    //observer.observe(popup.m_popup.document, { childList: true, subtree: true });
 
                     // Initial fallback in case menu is already present
                     //waitForElement('div.contextMenuContainer').then(addMoveLogoButton).catch(console.error);

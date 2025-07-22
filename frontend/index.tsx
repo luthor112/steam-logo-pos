@@ -126,7 +126,7 @@ async function OnPopupCreation(popup: any) {
                         newItem.textContent = 'Move Logo';
 
                         newItem.addEventListener('click', async () => {
-                            movementHandler();
+                            await movementHandler();
 
                             const parentDiv = container.parentElement;
                             if (parentDiv) 

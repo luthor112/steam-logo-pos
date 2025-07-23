@@ -16,24 +16,27 @@ const WaitForElementTimeout = async (sel: string, parent = document, timeOut = 1
 const WaitForElementList = async (sel: string, parent = document) =>
 	[...(await Millennium.findElement(parent, sel))];
 
-async function OnPopupCreation(popup: any) {
+async function OnPopupCreation(popup) {
     if (popup.m_strName === "SP Desktop_uid0") {
+        
+        let observer = null; // Declare observer here to hold its reference across navigations.
+
         var mwbm = undefined;
         while (!mwbm) {
             console.log("[steam-logo-pos] Waiting for MainWindowBrowserManager");
             try {
                 mwbm = MainWindowBrowserManager;
             } catch {
-                await sleep(100);
+                await client.sleep(100);
             }
         }
 
         MainWindowBrowserManager.m_browser.on("finished-request", async (currentURL, previousURL) => {
             if (MainWindowBrowserManager.m_lastLocation.pathname.startsWith("/library/app/")) {
-                const sizerDiv = await WaitForElement(`div.${findModule(e => e.BoxSizer).BoxSizer}`, popup.m_popup.document);
-
+                const sizerDiv = await WaitForElement(`div.${client.findModule(e => e.BoxSizer).BoxSizer}`, popup.m_popup.document);
                 const savedX = await get_app_x({ app_id: uiStore.currentGameListSelection.nAppId });
                 const savedY = await get_app_y({ app_id: uiStore.currentGameListSelection.nAppId });
+
                 if (savedX !== -1 || savedY !== -1) {
                     sizerDiv.style.left = savedX + "px";
                     sizerDiv.style.top = savedY + "px";
@@ -49,10 +52,8 @@ async function OnPopupCreation(popup: any) {
                             async function dragMouseDown(e) {
                                 e = e || window.event;
                                 e.preventDefault();
-
                                 lastX = e.clientX;
                                 lastY = e.clientY;
-
                                 popup.m_popup.document.onmouseup = elementRelease;
                                 popup.m_popup.document.onmousemove = elementDrag;
                             }
@@ -60,12 +61,10 @@ async function OnPopupCreation(popup: any) {
                             async function elementDrag(e) {
                                 e = e || window.event;
                                 e.preventDefault();
-
                                 diffX = lastX - e.clientX;
                                 diffY = lastY - e.clientY;
                                 lastX = e.clientX;
                                 lastY = e.clientY;
-
                                 elmntY = (elmnt.offsetTop - diffY);
                                 elmntX = (elmnt.offsetLeft - diffX);
                                 elmnt.style.top = elmntY + "px";
@@ -75,11 +74,9 @@ async function OnPopupCreation(popup: any) {
                             async function elementRelease() {
                                 popup.m_popup.document.onmouseup = null;
                                 popup.m_popup.document.onmousemove = null;
-
                                 await set_app_xy({ app_id: uiStore.currentGameListSelection.nAppId, pos_x: elmntX, pos_y: elmntY });
                             }
                         }
-
                         makeDraggableElement(sizerDiv);
                         sizerDiv.classList.add("logopos-header");
                     } else {
@@ -91,28 +88,30 @@ async function OnPopupCreation(popup: any) {
 
                 const appButtonEnabled = await get_app_button_enabled({});
                 if (appButtonEnabled) {
-                    const gameSettingsButton = await WaitForElement(`div.${findModule(e => e.InPage).InPage} div.${findModule(e => e.AppButtonsContainer).AppButtonsContainer} > div.${findModule(e => e.MenuButtonContainer).MenuButtonContainer}:not([role="button"])`, popup.m_popup.document);
+                    const gameSettingsButton = await WaitForElement(`div.${client.findModule(e => e.InPage).InPage} div.${client.findModule(e => e.AppButtonsContainer).AppButtonsContainer} > div.${client.findModule(e => e.MenuButtonContainer).MenuButtonContainer}:not([role="button"])`, popup.m_popup.document);
                     const oldMoveButton = gameSettingsButton.parentNode.querySelector('div.logo-move-button');
+                    
                     if (!oldMoveButton) {
                         const moveButton = gameSettingsButton.cloneNode(true);
                         moveButton.classList.add("logo-move-button");
                         moveButton.firstChild.innerHTML = "ML";
                         gameSettingsButton.parentNode.insertBefore(moveButton, gameSettingsButton.nextSibling);
-
                         moveButton.addEventListener("click", movementHandler);
                     }
                 }
 
                 const contextMenuEnabled = await get_context_menu_enabled({});
                 if (contextMenuEnabled) {
+
+                    // Disconnect the old observer before creating a new one to prevent conflicts.
+                    if (observer) {
+                        observer.disconnect();
+                    }
+
                     const hasSpecificMenuItems = (container) => {
                         const itemsText = Array.from(container.querySelectorAll('div._1n7Wloe5jZ6fSuvV18NNWI.contextMenuItem'))
                             .map(el => el.textContent.trim());
-
-                        const requiredItems = [
-                            'Adjust Logo Position'
-                        ];
-
+                        const requiredItems = ['Adjust Logo Position'];
                         return requiredItems.every(item => itemsText.includes(item));
                     };
 
@@ -124,27 +123,23 @@ async function OnPopupCreation(popup: any) {
                         newItem.setAttribute('role', '_1n7Wloe5jZ6fSuvV18NNWI');
                         newItem.className = '_1n7Wloe5jZ6fSuvV18NNWI contextMenuItem moveLogoAdded';
                         newItem.textContent = 'Move Logo';
-
                         newItem.addEventListener('click', async () => {
                             await movementHandler();
-
                             const parentDiv = container.parentElement;
-                            if (parentDiv) 
-                                parentDiv.style.display = 'none';
-                            else
-                                container.style.display = 'none';
+                            if (parentDiv) parentDiv.style.display = 'none';
+                            else container.style.display = 'none';
                         });
-
                         container.appendChild(newItem);
                         console.log('[steam-logo-pos] "Move Logo" item successfully added');
                     };
 
-                    const observer = new MutationObserver(mutations => {
+                    // Assign to the shared observer reference.
+                    observer = new MutationObserver(mutations => {
                         mutations.forEach(mutation => {
                             mutation.addedNodes.forEach(node => {
                                 if (node.nodeType === 1) { // Element node
-                                    const container = node.querySelector('div._2EstNjFIIZm_WUSKm5Wt7n') || 
-                                                      (node.classList && node.classList.contains('_2EstNjFIIZm_WUSKm5Wt7n') ? node : null);
+                                    const container = node.querySelector('div._2EstNjFIIZm_WUSKm5Wt7n') ||
+                                        (node.classList && node.classList.contains('_2EstNjFIIZm_WUSKm5Wt7n') ? node : null);
                                     if (container) {
                                         addMoveLogoButton(container);
                                     }

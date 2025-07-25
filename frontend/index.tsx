@@ -27,13 +27,13 @@ async function OnPopupCreation(popup) {
             try {
                 mwbm = MainWindowBrowserManager;
             } catch {
-                await client.sleep(100);
+                await sleep(100);
             }
         }
 
         MainWindowBrowserManager.m_browser.on("finished-request", async (currentURL, previousURL) => {
             if (MainWindowBrowserManager.m_lastLocation.pathname.startsWith("/library/app/")) {
-                const sizerDiv = await WaitForElement(`div.${client.findModule(e => e.BoxSizer).BoxSizer}`, popup.m_popup.document);
+                const sizerDiv = await WaitForElement(`div.${findModule(e => e.BoxSizer).BoxSizer}`, popup.m_popup.document);
                 const savedX = await get_app_x({ app_id: uiStore.currentGameListSelection.nAppId });
                 const savedY = await get_app_y({ app_id: uiStore.currentGameListSelection.nAppId });
 
@@ -88,7 +88,7 @@ async function OnPopupCreation(popup) {
 
                 const appButtonEnabled = await get_app_button_enabled({});
                 if (appButtonEnabled) {
-                    const gameSettingsButton = await WaitForElement(`div.${client.findModule(e => e.InPage).InPage} div.${client.findModule(e => e.AppButtonsContainer).AppButtonsContainer} > div.${client.findModule(e => e.MenuButtonContainer).MenuButtonContainer}:not([role="button"])`, popup.m_popup.document);
+                    const gameSettingsButton = await WaitForElement(`div.${findModule(e => e.InPage).InPage} div.${findModule(e => e.AppButtonsContainer).AppButtonsContainer} > div.${findModule(e => e.MenuButtonContainer).MenuButtonContainer}:not([role="button"])`, popup.m_popup.document);
                     const oldMoveButton = gameSettingsButton.parentNode.querySelector('div.logo-move-button');
                     
                     if (!oldMoveButton) {
@@ -154,52 +154,6 @@ async function OnPopupCreation(popup) {
                     // Initial fallback in case menu is already present
                     //waitForElement('div.contextMenuContainer').then(addMoveLogoButton).catch(console.error);
                 }
-
-                //const contextMenuEnabled = await get_context_menu_enabled({});
-                /*const contextMenuEnabled = false;
-                if (contextMenuEnabled) {
-                    const topCapsuleDiv = await WaitForElement(`div.${findModule(e => e.TopCapsule).TopCapsule}`, popup.m_popup.document);
-                    if (!topCapsuleDiv.classList.contains("easygrid-rightclick")) {
-                        //topCapsuleDiv.addEventListener("contextmenu", async (e) => {
-                            console.log("[steam-logo-pos] Right click detected!");
-                            const menuItemAdder = (menuElement) => {
-                                const moveMenu = popup.m_popup.document.createElement("div");
-                                moveMenu.role = "option";
-                                moveMenu.className = `${findModule(e => e.contextMenuItem).contextMenuItem} contextMenuItem`;
-                                moveMenu.innerHTML = "Move Logo Freely";
-                                // TODO: Add handler here
-                                menuElement.appendChild(moveMenu);
-                            };
-                            
-                            const observer = new MutationObserver((mutations) => {
-                                const contextManuClassName = findModule(e => e.contextMenuContents).contextMenuContents;
-                                for (const mutation of mutations) {
-                                    for (const node of Array.from(mutation.addedNodes)) {
-                                        if (node.nodeType !== Node.ELEMENT_NODE)
-                                            continue;
-
-                                        const element = node as Element;
-                                        if (element.classList.contains(contextManuClassName)) {
-                                            observer.disconnect();
-                                            menuItemAdder(element);
-                                        }
-
-                                        const match = element.querySelector(`.${contextManuClassName}`);
-                                        if (match) {
-                                            observer.disconnect();
-                                            menuItemAdder(element);
-                                        }
-                                    }
-                                }
-                            });
-                            observer.observe(popup.m_popup.document.body, {
-                                childList: true,
-                                subtree: true
-                            });
-                        //});
-                        topCapsuleDiv.classList.add("easygrid-rightclick");
-                    }
-                }*/
             }
         });
     }
@@ -207,7 +161,14 @@ async function OnPopupCreation(popup) {
 
 export default async function PluginMain() {
     console.log("[steam-logo-pos] Frontend startup");
-    await sleep(1000);  // Hopefully temporary workaround
+    while (
+        typeof g_PopupManager === 'undefined' ||
+        typeof MILLENNIUM_API === 'undefined' ||
+        typeof MILLENNIUM_BACKEND_IPC === 'undefined' ||
+        typeof MainWindowBrowserManager === 'undefined'
+    ) {
+        await sleep(100);
+    }
 
     const doc = g_PopupManager.GetExistingPopup("SP Desktop_uid0");
 	if (doc) {

@@ -112,7 +112,10 @@ async function OnPopupCreation(popup) {
                         // _1n7Wloe5jZ6fSuvV18NNWI == contextMenuItem
                         const itemsText = Array.from(container.querySelectorAll(`div.${findModule(e => e.ContextMenuMouseOverlay).contextMenuItem}.contextMenuItem`))
                             .map(el => el.textContent.trim());
-                        const requiredItems = ['Adjust Logo Position'];
+                        // "CustomArt_EditLogoPosition":"Adjust Logo Position"
+                        while (!findModule(e => e["CustomArt_EditLogoPosition"]));
+                        console.log("[steam-logo-pos] CustomArt_EditLogoPosition == ", findModule(e => e["CustomArt_EditLogoPosition"])["CustomArt_EditLogoPosition"]);
+                        const requiredItems = [findModule(e => e["CustomArt_EditLogoPosition"])["CustomArt_EditLogoPosition"]];
                         return requiredItems.every(item => itemsText.includes(item));
                     };
 

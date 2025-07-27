@@ -109,7 +109,8 @@ async function OnPopupCreation(popup) {
                     }
 
                     const hasSpecificMenuItems = (container) => {
-                        const itemsText = Array.from(container.querySelectorAll('div._1n7Wloe5jZ6fSuvV18NNWI.contextMenuItem'))
+                        // _1n7Wloe5jZ6fSuvV18NNWI == contextMenuItem
+                        const itemsText = Array.from(container.querySelectorAll(`div.${findModule(e => e.ContextMenuMouseOverlay).contextMenuItem}.contextMenuItem`))
                             .map(el => el.textContent.trim());
                         const requiredItems = ['Adjust Logo Position'];
                         return requiredItems.every(item => itemsText.includes(item));
@@ -120,8 +121,9 @@ async function OnPopupCreation(popup) {
                         if (container.querySelector('.contextMenuItem.moveLogoAdded')) return;
 
                         const newItem = document.createElement('div');
-                        newItem.setAttribute('role', '_1n7Wloe5jZ6fSuvV18NNWI');
-                        newItem.className = '_1n7Wloe5jZ6fSuvV18NNWI contextMenuItem moveLogoAdded';
+                        // _1n7Wloe5jZ6fSuvV18NNWI == contextMenuItem
+                        newItem.setAttribute('role', `${findModule(e => e.ContextMenuMouseOverlay).contextMenuItem}`);
+                        newItem.className = `${findModule(e => e.ContextMenuMouseOverlay).contextMenuItem} contextMenuItem moveLogoAdded`;
                         newItem.textContent = 'Move Logo';
                         newItem.addEventListener('click', async () => {
                             await movementHandler();
@@ -138,8 +140,9 @@ async function OnPopupCreation(popup) {
                         mutations.forEach(mutation => {
                             mutation.addedNodes.forEach(node => {
                                 if (node.nodeType === 1) { // Element node
-                                    const container = node.querySelector('div._2EstNjFIIZm_WUSKm5Wt7n') ||
-                                        (node.classList && node.classList.contains('_2EstNjFIIZm_WUSKm5Wt7n') ? node : null);
+                                    // _2EstNjFIIZm_WUSKm5Wt7n == contextMenuContents
+                                    const container = node.querySelector(`div.${findModule(e => e.ContextMenuMouseOverlay).contextMenuContents}`) ||
+                                        (node.classList && node.classList.contains(`${findModule(e => e.ContextMenuMouseOverlay).contextMenuContents}`) ? node : null);
                                     if (container) {
                                         addMoveLogoButton(container);
                                     }
@@ -149,10 +152,6 @@ async function OnPopupCreation(popup) {
                     });
 
                     observer.observe(popup.m_popup.document.body, { childList: true, subtree: true });
-                    //observer.observe(popup.m_popup.document, { childList: true, subtree: true });
-
-                    // Initial fallback in case menu is already present
-                    //waitForElement('div.contextMenuContainer').then(addMoveLogoButton).catch(console.error);
                 }
             }
         });

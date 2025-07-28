@@ -1,4 +1,5 @@
-import { callable, findModule, Millennium, sleep } from "@steambrew/client";
+import { callable, findModule, Millennium, sleep, DialogButton } from "@steambrew/client";
+import { render } from "react-dom";
 
 // Backend functions
 const get_app_x = callable<[{ app_id: number }], number>('Backend.get_app_x');
@@ -77,12 +78,33 @@ async function OnPopupCreation(popup) {
                                 await set_app_xy({ app_id: uiStore.currentGameListSelection.nAppId, pos_x: elmntX, pos_y: elmntY });
                             }
                         }
+
                         makeDraggableElement(sizerDiv);
                         sizerDiv.classList.add("logopos-header");
+
+                        const topCapsuleDiv = await WaitForElement(`div.${findModule(e => e.TopCapsule).TopCapsule}`, popup.m_popup.document);
+                        const oldDoneBtn = topCapsuleDiv.querySelector("div.logo-move-done-button");
+                        if (oldDoneBtn) {
+                            oldDoneBtn.style.display = "";
+                        } else {
+                            const doneBtn = document.createElement('div');
+                            doneBtn.className = "logo-move-done-button";
+                            doneBtn.style.position = "absolute";
+                            doneBtn.style.right = "20px";
+                            doneBtn.style.bottom = "20px";
+                            render(<DialogButton style={{width: "50px"}} onClick={movementHandler}>Done</DialogButton>, doneBtn);
+                            topCapsuleDiv.appendChild(doneBtn);
+                        }
                     } else {
                         sizerDiv.onmousedown = null;
                         sizerDiv.style.cursor = "";
                         sizerDiv.classList.remove("logopos-header");
+
+                        const topCapsuleDiv = await WaitForElement(`div.${findModule(e => e.TopCapsule).TopCapsule}`, popup.m_popup.document);
+                        const oldDoneBtn = topCapsuleDiv.querySelector("div.logo-move-done-button");
+                        if (oldDoneBtn) {
+                            oldDoneBtn.style.display = "none";
+                        }
                     }
                 };
 

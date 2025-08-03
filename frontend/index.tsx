@@ -187,8 +187,6 @@ export default async function PluginMain() {
     console.log("[steam-logo-pos] Frontend startup");
     while (
         typeof g_PopupManager === 'undefined' ||
-        typeof MILLENNIUM_API === 'undefined' ||
-        typeof MILLENNIUM_BACKEND_IPC === 'undefined' ||
         typeof MainWindowBrowserManager === 'undefined'
     ) {
         await sleep(100);

@@ -185,12 +185,7 @@ async function OnPopupCreation(popup) {
 
 export default async function PluginMain() {
     console.log("[steam-logo-pos] Frontend startup");
-    while (
-        typeof g_PopupManager === 'undefined' ||
-        typeof MainWindowBrowserManager === 'undefined'
-    ) {
-        await sleep(100);
-    }
+    await App.WaitForServicesInitialized();
 
     const doc = g_PopupManager.GetExistingPopup("SP Desktop_uid0");
 	if (doc) {

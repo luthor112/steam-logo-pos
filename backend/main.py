@@ -3,6 +3,7 @@ logger = PluginUtils.Logger()
 
 import json
 import os
+import shutil
 
 pos_db = {}
 
@@ -13,7 +14,13 @@ pos_db = {}
 def get_config_fname():
     return os.path.join(PLUGIN_BASE_DIR, "config.json")
 
+def get_defaults_fname():
+    return os.path.join(PLUGIN_BASE_DIR, "defaults.json")
+
 def get_config():
+    if not os.path.exists(get_config_fname()):
+        shutil.copyfile(get_defaults_fname(), get_config_fname())
+
     with open(get_config_fname(), "rt") as fp:
         return json.load(fp)
 

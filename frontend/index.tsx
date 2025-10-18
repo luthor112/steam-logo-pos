@@ -92,7 +92,7 @@ async function OnPopupCreation(popup) {
                             doneBtn.style.position = "absolute";
                             doneBtn.style.right = "20px";
                             doneBtn.style.bottom = "20px";
-                            render(<DialogButton style={{width: "50px"}} onClick={movementHandler}>Done</DialogButton>, doneBtn);
+                            render(<DialogButton style={{width: "fit-content", padding: "0px 20px"}} onClick={movementHandler}>Done</DialogButton>, doneBtn);
                             topCapsuleDiv.appendChild(doneBtn);
                         }
                     } else {

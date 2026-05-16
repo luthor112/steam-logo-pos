@@ -271,6 +271,36 @@ const SettingsContent = () => {
         <div>
             <SingleSetting name="context_menu" type="bool" label="Context menu option" description="Add Move Logo option to context menu" />
             <SingleSetting name="show_button" type="bool" label="Show button" description="Add ML button to applcation page" />
+            <DialogButton onClick={async (e) => {
+                console.log("[steam-logo-pos] Importing database");
+                
+                const openTag = (e.target as HTMLElement).ownerDocument.createElement("input");
+                openTag.type = "file";
+                openTag.accept = "text/plain";
+                openTag.onchange = (e) => {
+                    console.log("[steam-logo-pos] File selected!");
+
+                    const reader = new FileReader();
+                    reader.onload = function() {
+                        const fileText = reader.result;
+                        if (fileText !== null) {
+                            posDB = JSON.parse(fileText as string);
+                            localStorage.setItem("luthor112.steam-logo-pos.posdb", JSON.stringify(posDB));
+                        }
+
+                        (e.target as HTMLElement).remove();
+                    };
+                    reader.readAsText((e.target as HTMLInputElement)!.files![0]);
+                };
+
+                (e.target as HTMLElement).parentElement!.appendChild(openTag);
+                openTag.click();
+            }}>Import database</DialogButton>
+            <DialogButton onClick={async () => {
+                console.log("[steam-logo-pos] Exporting database");
+                const exportText = "data:text/plain;base64," + btoa(JSON.stringify(posDB));
+                SteamClient.Browser.StartDownload(exportText);
+            }}>Export database</DialogButton>
         </div>
     );
 };

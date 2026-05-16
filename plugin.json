@@ -4,6 +4,6 @@
     "name": "steam-logo-pos",
     "common_name": "Custom Logo Position",
     "description": "Arbitrary repositioning of application logos",
-    "version": "2.0.2",
+    "version": "2.0.3",
     "backendType": "lua"
 }

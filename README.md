@@ -11,6 +11,8 @@ A Millennium plugin that allows for the arbitrary repositioning of application l
     - Right click the header and select `Move Logo`
     - Move application logo by dragging it
     - Click the `Done` button or select the menu item again to lock the Logo
+- Import and Export database
+    - Find the options in the Millennium Library Manager
 
 ## Configuration
 - Configuration options are available through the Millennium Library Manager

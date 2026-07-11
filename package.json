@@ -12,7 +12,7 @@
   },
   "type": "module",
   "name": "steam-logo-pos",
-  "version": "2.0.3",
+  "version": "2.0.4",
   "description": "Arbitrary repositioning of application logos",
   "main": "./frontend/index.jsx",
   "author": "luthor112",

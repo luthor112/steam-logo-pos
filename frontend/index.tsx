@@ -155,6 +155,7 @@ async function OnPopupCreation(popup: any) {
                     if (!oldMoveButton) {
                         const moveButton = gameSettingsButton.cloneNode(true);
                         (moveButton as HTMLElement).classList.add("logo-move-button");
+                        (moveButton as HTMLElement).title = "Move Logo";
                         (moveButton.firstChild! as HTMLElement).innerHTML = "ML";
                         gameSettingsButton.parentNode!.insertBefore(moveButton, gameSettingsButton.nextSibling);
                         moveButton.addEventListener("click", movementHandler);

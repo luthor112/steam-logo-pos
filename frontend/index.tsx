@@ -153,9 +153,13 @@ async function OnPopupCreation(popup: any) {
                     const oldMoveButton = gameSettingsButton.parentNode!.querySelector('div.logo-move-button');
                     
                     if (!oldMoveButton) {
-                        const moveButton = gameSettingsButton.cloneNode(true);
-                        (moveButton as HTMLElement).classList.add("logo-move-button");
-                        (moveButton as HTMLElement).title = "Move Logo";
+                        const moveButton = gameSettingsButton.cloneNode(true) as HTMLElement;
+                        const privateIndicator = moveButton.querySelector("div.PrivateAppActiveIndicator");
+                        if (privateIndicator) {
+                            privateIndicator.remove();
+                        }
+                        moveButton.classList.add("logo-move-button");
+                        moveButton.title = "Move Logo";
                         (moveButton.firstChild! as HTMLElement).innerHTML = "ML";
                         gameSettingsButton.parentNode!.insertBefore(moveButton, gameSettingsButton.nextSibling);
                         moveButton.addEventListener("click", movementHandler);
